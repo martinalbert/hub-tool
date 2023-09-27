@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,7 +29,7 @@ import (
 	"github.com/docker/cli/cli/command"
 	dockercredentials "github.com/docker/cli/cli/config/credentials"
 	cliflags "github.com/docker/cli/cli/flags"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/martinalbert/hub-tool/pkg/credentials"
 	log "github.com/sirupsen/logrus"
 )
@@ -48,7 +47,7 @@ const (
 
 // Client sends authenticated calls to the Hub API
 type Client struct {
-	AuthConfig types.AuthConfig
+	AuthConfig registry.AuthConfig
 	Ctx        context.Context
 
 	client           *http.Client
@@ -62,7 +61,8 @@ type Client struct {
 	out              io.Writer
 }
 
-func GetClient(ctx context.Context, username, password string) *Client {
+// NewClient prepares docker CLI and returns a Hub tool client
+func NewClient(ctx context.Context, username, password string) *Client {
 	dockerCli, err := command.NewDockerCli()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -82,7 +82,7 @@ func GetClient(ctx context.Context, username, password string) *Client {
 		log.Fatal(err)
 	}
 
-	hubClient, err := NewClient(
+	hubClient, err := newClient(
 		WithContext(ctx),
 		// WithInStream(dockerCli.In()),
 		// WithOutStream(dockerCli.Out()),
@@ -121,7 +121,7 @@ type RequestOp func(r *http.Request) error
 
 // NewClient logs the user to the hub and returns a client which can send authenticated requests
 // to the Hub API
-func NewClient(ops ...ClientOp) (*Client, error) {
+func newClient(ops ...ClientOp) (*Client, error) {
 	hubInstance := getInstance()
 
 	client := &Client{
@@ -243,7 +243,7 @@ func WithSortingOrder(order string) RequestOp {
 // Login tries to authenticate, it will call the twoFactorCodeProvider if the
 // user has 2FA activated
 func (c *Client) Login(username string, password string, twoFactorCodeProvider func() (string, error)) (string, string, error) {
-	data, err := json.Marshal(types.AuthConfig{
+	data, err := json.Marshal(registry.AuthConfig{
 		Username: username,
 		Password: password,
 	})
@@ -262,7 +262,7 @@ func (c *Client) Login(username string, password string, twoFactorCodeProvider f
 		return "", "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	buf, err := ioutil.ReadAll(resp.Body)
+	buf, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", "", err
 	}
@@ -319,7 +319,7 @@ func (c *Client) getTwoFactorToken(token string, twoFactorCodeProvider func() (s
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	buf, err := ioutil.ReadAll(resp.Body)
+	buf, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", "", err
 	}
@@ -357,7 +357,7 @@ func (c *Client) doRequest(req *http.Request, reqOps ...RequestOp) ([]byte, erro
 		if resp.StatusCode == http.StatusForbidden {
 			return nil, &forbiddenError{}
 		}
-		buf, err := ioutil.ReadAll(resp.Body)
+		buf, err := io.ReadAll(resp.Body)
 		log.Debugf("bad status code %q: %s", resp.Status, buf)
 		if err == nil {
 			if ok, err := extractError(buf, resp); ok {
@@ -366,7 +366,7 @@ func (c *Client) doRequest(req *http.Request, reqOps ...RequestOp) ([]byte, erro
 		}
 		return nil, fmt.Errorf("bad status code %q", resp.Status)
 	}
-	buf, err := ioutil.ReadAll(resp.Body)
+	buf, err := io.ReadAll(resp.Body)
 	log.Tracef("HTTP response body: %s", buf)
 	if err != nil {
 		return nil, err
