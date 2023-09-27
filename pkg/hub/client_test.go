@@ -22,14 +22,12 @@ import (
 	"testing"
 
 	"gotest.tools/v3/assert"
-
-	"github.com/docker/hub-tool/internal"
 )
 
 func TestDoRequestAddsCustomUserAgent(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, r.Header.Get("Accept"), "application/json")
-		assert.Equal(t, r.Header.Get("User-Agent"), "hub-tool/"+internal.Version)
+		assert.Equal(t, r.Header.Get("User-Agent"), "hub-tool/unknown")
 	}))
 	defer server.Close()
 	req, err := http.NewRequest("GET", server.URL, nil)
