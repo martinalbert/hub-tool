@@ -23,7 +23,7 @@ ifeq ($(TAG_NAME),)
     TAG_NAME:=$(shell git describe --tags --match "v[0-9]*" 2> $(NULL))
 endif
 
-PKG_NAME:=github.com/docker/hub-tool
+PKG_NAME:=github.com/martinalbert/hub-tool
 STATIC_FLAGS:=CGO_ENABLED=0
 LDFLAGS:="-s -w \
     -X $(PKG_NAME)/internal.GitCommit=$(COMMIT) \
@@ -46,49 +46,7 @@ TMPDIR_WIN_PKG:=$(shell mktemp -d)
 lint:
 	$(STATIC_FLAGS) golangci-lint run --timeout 10m0s ./...
 
-.PHONY: e2e
-e2e:
-	# TODO: gotestsum doesn't forward ldflags to go test with golang 1.15.0, so moving back to go test temporarily
-	$(VARS) go test ./e2e $(RUN_TEST) -ldflags=$(LDFLAGS)
-
 .PHONY: test-unit
 test-unit:
 	$(STATIC_FLAGS) gotestsum $(shell go list ./... | grep -vE '/e2e')
 
-.PHONY:cross
-cross:
-	GOOS=linux   GOARCH=amd64 $(STATIC_FLAGS) $(GO_BUILD) -o bin/$(BINARY_NAME)_linux_amd64 .
-	GOOS=linux   GOARCH=arm64 $(STATIC_FLAGS) $(GO_BUILD) -o bin/$(BINARY_NAME)_linux_arm64 .
-	GOOS=linux   GOARCH=arm   $(STATIC_FLAGS) $(GO_BUILD) -o bin/$(BINARY_NAME)_linux_arm .
-	GOOS=darwin  GOARCH=amd64 $(STATIC_FLAGS) $(GO_BUILD) -o bin/$(BINARY_NAME)_darwin_amd64 .
-	GOOS=darwin  GOARCH=arm64 $(STATIC_FLAGS) $(GO_BUILD) -o bin/$(BINARY_NAME)_darwin_arm64 .
-	GOOS=windows GOARCH=amd64 $(STATIC_FLAGS) $(GO_BUILD) -o bin/$(BINARY_NAME)_windows_amd64.exe .
-
-# Note we're building statically for now to simplify releases. We can
-# investigate dynamic builds later.
-.PHONY: build
-build:
-	mkdir -p bin
-	$(STATIC_FLAGS) $(GO_BUILD) -o bin/$(PLATFORM_BINARY) .
-	cp bin/$(PLATFORM_BINARY) bin/$(BINARY)
-
-.PHONY: package
-package: build
-	mkdir -p dist
-ifeq ($(GOOS),windows)
-	cp bin/$(PLATFORM_BINARY) $(TMPDIR_WIN_PKG)/$(BINARY_NAME).exe
-	cp packaging/LICENSE $(TMPDIR_WIN_PKG)/LICENSE
-	rm -f dist/$(BINARY_NAME)-windows-$(GOARCH).zip && 7z a dist/$(BINARY_NAME)-windows-$(GOARCH).zip $(TMPDIR_WIN_PKG)/*
-	rm -r $(TMPDIR_WIN_PKG)
-else
-	tar -czf dist/$(BINARY_NAME)-$(GOOS)-$(GOARCH).tar.gz $(TAR_TRANSFORM) packaging/LICENSE bin/$(PLATFORM_BINARY)
-endif
-
-.PHONY: ci-extract
-ci-extract:
-	mkdir -p bin
-ifeq ($(GOOS),windows)
-	7z e -obin/ dist/$(BINARY_NAME)-windows-amd64.zip $(BINARY_NAME).exe
-else
-	tar xzf dist/$(BINARY_NAME)-$(GOOS)-$(GOARCH).tar.gz --strip-components 1 --directory bin/ $(BINARY_NAME)/$(BINARY_NAME)
-endif

@@ -31,7 +31,7 @@ import (
 	dockercredentials "github.com/docker/cli/cli/config/credentials"
 	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/hub-tool/pkg/credentials"
+	"github.com/martinalbert/hub-tool/pkg/credentials"
 	log "github.com/sirupsen/logrus"
 )
 

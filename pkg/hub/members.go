@@ -31,13 +31,13 @@ const (
 	MembersPerTeamURL = "/v2/orgs/%s/groups/%s/members/"
 )
 
-//Member is a user part of an organization
+// Member is a user part of an organization
 type Member struct {
 	Username string `json:"username"`
 	FullName string `json:"full_name"`
 }
 
-//GetMembers lists all the members in an organization
+// GetMembers lists all the members in an organization
 func (c *Client) GetMembers(organization string) ([]Member, error) {
 	u, err := url.Parse(c.domain + fmt.Sprintf(MembersURL, organization))
 	if err != nil {
@@ -92,7 +92,7 @@ func (c *Client) GetMembersCount(organization string) (int, error) {
 }
 
 // GetMembersPerTeam returns the members of a team in an organization
-func (c *Client) GetMembersPerTeam(organization, team string) ([]Member, error) {
+func (c *Client) GetMembersPerTeam(organization, team string) (interface{}, error) {
 	u := c.domain + fmt.Sprintf(MembersPerTeamURL, organization, team)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
@@ -102,10 +102,11 @@ func (c *Client) GetMembersPerTeam(organization, team string) ([]Member, error) 
 	if err != nil {
 		return nil, err
 	}
-	var members []Member
+	var members interface{}
 	if err := json.Unmarshal(response, &members); err != nil {
 		return nil, err
 	}
+
 	return members, nil
 }
 

@@ -25,7 +25,7 @@ ARG GOLANGCI_LINT_VERSION=v1.33.0-alpine
 # BUILDER
 ####
 FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION} AS builder
-WORKDIR /go/src/github.com/docker/hub-tool
+WORKDIR /go/src/github.com/martinalbert/hub-tool
 RUN apk add --no-cache \
     bash \
     git \
@@ -75,8 +75,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     go mod tidy
 
 FROM scratch AS go-mod-tidy
-COPY --from=go-mod-tidy-run /go/src/github.com/docker/hub-tool/go.mod /
-COPY --from=go-mod-tidy-run /go/src/github.com/docker/hub-tool/go.sum /
+COPY --from=go-mod-tidy-run /go/src/github.com/martinalbert/hub-tool/go.mod /
+COPY --from=go-mod-tidy-run /go/src/github.com/martinalbert/hub-tool/go.sum /
 
 ####
 # BUILD
@@ -95,7 +95,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 ####
 FROM scratch AS hub
 ARG BINARY_NAME
-COPY --from=build /go/src/github.com/docker/hub-tool/bin/${BINARY_NAME} /${BINARY_NAME}
+COPY --from=build /go/src/github.com/martinalbert/hub-tool/bin/${BINARY_NAME} /${BINARY_NAME}
 
 ####
 # CROSS_BUILD
@@ -111,7 +111,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # CROSS
 ####
 FROM scratch AS cross
-COPY --from=cross-build /go/src/github.com/docker/hub-tool/bin/* /
+COPY --from=cross-build /go/src/github.com/martinalbert/hub-tool/bin/* /
 
 ####
 # PACKAGE
@@ -120,7 +120,7 @@ FROM scratch AS package
 ARG BINARY_NAME
 ARG TARGETOS
 ARG TARGETARCH
-COPY --from=builder /go/src/github.com/docker/hub-tool/packaging/LICENSE /${BINARY_NAME}/LICENSE
+COPY --from=builder /go/src/github.com/martinalbert/hub-tool/packaging/LICENSE /${BINARY_NAME}/LICENSE
 COPY --from=cross /${BINARY_NAME}_${TARGETOS}_${TARGETARCH} /${BINARY_NAME}/${BINARY_NAME}
 
 ####
@@ -161,6 +161,6 @@ ENV TAG_NAME=$TAG_NAME
 ENV BINARY=$BINARY
 ENV DOCKER_CONFIG="/root/.docker"
 # install hub tool
-COPY --from=build /go/src/github.com/docker/hub-tool/bin/${BINARY} ./bin/${BINARY}
+COPY --from=build /go/src/github.com/martinalbert/hub-tool/bin/${BINARY} ./bin/${BINARY}
 RUN chmod +x ./bin/${BINARY}
 CMD ["make", "-f", "builder.Makefile", "e2e"]

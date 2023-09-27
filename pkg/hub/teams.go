@@ -32,14 +32,14 @@ const (
 	GroupsURL = "/v2/orgs/%s/groups/"
 )
 
-//Team represents a hub group in an organization
+// Team represents a hub group in an organization
 type Team struct {
 	Name        string
 	Description string
 	Members     []Member
 }
 
-//GetTeams lists all the teams in an organization
+// GetTeams lists all the teams in an organization
 func (c *Client) GetTeams(organization string) ([]Team, error) {
 	u, err := url.Parse(c.domain + fmt.Sprintf(GroupsURL, organization))
 	if err != nil {
@@ -67,7 +67,7 @@ func (c *Client) GetTeams(organization string) ([]Team, error) {
 	return teams, nil
 }
 
-//GetTeamsCount returns the number of teams in an organization
+// GetTeamsCount returns the number of teams in an organization
 func (c *Client) GetTeamsCount(organization string) (int, error) {
 	u, err := url.Parse(c.domain + fmt.Sprintf(GroupsURL, organization))
 	if err != nil {
@@ -102,23 +102,40 @@ func (c *Client) getTeamsPage(url, organization string) ([]Team, string, error) 
 	if err != nil {
 		return nil, "", err
 	}
-	var hubResponse hubGroupResponse
+
+	// parse the json no matter the scheme
+
+	var hubResponse struct {
+		Results []struct {
+			Name        string
+			Description string
+		}
+		Next string
+	}
 	if err := json.Unmarshal(response, &hubResponse); err != nil {
 		return nil, "", err
 	}
+
+	fmt.Printf("\n\nRES: %v\n\nDOFFUUUUC\n", hubResponse)
+
 	var teams []Team
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, result := range hubResponse.Results {
 		result := result
 		eg.Go(func() error {
+			fmt.Printf("\n\nGET MEMBERS")
+
 			members, err := c.GetMembersPerTeam(organization, result.Name)
 			if err != nil {
 				return err
 			}
+
+			fmt.Printf("RECEIVED MEMBERS: %v\n\n", members)
+
 			team := Team{
 				Name:        result.Name,
 				Description: result.Description,
-				Members:     members,
+				// Members:     members,
 			}
 			teams = append(teams, team)
 			return nil

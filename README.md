@@ -20,12 +20,12 @@ perform Hub maintenance tasks.
 ### Install
 
 - Download the latest release for your platform from
-  [here](https://github.com/docker/hub-tool/releases)
+  [here](https://github.com/martinalbert/hub-tool/releases)
 - Extract the package and place the `hub-tool` binary somewhere in your `PATH`
 
 OR
 
-- Install from sources: `GO111MODULE=on go get github.com/docker/hub-tool`
+- Install from sources: `GO111MODULE=on go get github.com/martinalbert/hub-tool`
 
 ### Login to Docker Hub
 
@@ -64,7 +64,7 @@ it's not meant to be a final product.
 ### Feedback
 
 Please leave your feedback in the
-[issue tracker](https://github.com/docker/hub-tool/issues)!
+[issue tracker](https://github.com/martinalbert/hub-tool/issues)!
 We'd love to know how you're using this tool and what features you'd like to see
 us add.
 
@@ -74,7 +74,7 @@ At this stage of the project, we're mostly looking for feedback. We will accept
 pull requests but these should be limited to minor improvements and fixes.
 Anything larger should first be discussed as an issue.
 If you spot a bug or see a typo, please feel free to fix it by putting up a
-[pull request](https://github.com/docker/hub-tool/pulls)!
+[pull request](https://github.com/martinalbert/hub-tool/pulls)!
 
 ## Building
 

@@ -25,51 +25,12 @@ BUILD_ARGS:=--build-arg GO_VERSION=$(GO_VERSION) \
     --build-arg BINARY_NAME=$(BINARY_NAME) \
     --build-arg BINARY=$(BINARY)
 
-E2E_ENV:=--env E2E_HUB_USERNAME \
-    --env E2E_HUB_TOKEN \
-    --env E2E_TEST_NAME
-
-UNIX_PLATFORMS:=linux/amd64 linux/arm linux/arm64 darwin/amd64 darwin/arm64
-
-TMPDIR_WIN_PKG:=$(shell mktemp -d)
-
-.PHONY: all
-all: build
-
-.PHONY: build
-build: ## Build the tool in a container
-	$(DOCKER_BUILD) $(BUILD_ARGS) . \
-		--output type=local,dest=./bin \
-		--platform local \
-		--target hub
-
 .PHONY: mod-tidy
 mod-tidy: ## Update go.mod and go.sum
 	$(DOCKER_BUILD) $(BUILD_ARGS) . \
 		--output type=local,dest=. \
 		--platform local \
 		--target go-mod-tidy
-
-.PHONY: cross
-cross: ## Cross compile the tool binaries in a container
-	$(DOCKER_BUILD) $(BUILD_ARGS) . \
-		--output type=local,dest=./bin \
-		--target cross
-
-.PHONY: package-cross
-package-cross: cross ## Package the cross compiled binaries in tarballs for *nix and a zip for Windows
-	mkdir -p dist
-	$(foreach plat,$(UNIX_PLATFORMS),$(DOCKER_BUILD) $(BUILD_ARGS) . \
-			--platform $(plat) \
-			--output type=tar,dest=- \
-			--target package | gzip -9 > dist/$(BINARY_NAME)-$(subst /,-,$(plat)).tar.gz ;)
-	cp bin/$(BINARY_NAME)_windows_amd64.exe $(TMPDIR_WIN_PKG)/$(BINARY_NAME).exe
-	rm -f dist/$(BINARY_NAME)-windows-amd64.zip && zip dist/$(BINARY_NAME)-windows-amd64.zip -j packaging/LICENSE $(TMPDIR_WIN_PKG)/$(BINARY_NAME).exe
-	rm -r $(TMPDIR_WIN_PKG)
-
-.PHONY: install
-install: build ## Install the tool to your /usr/local/bin/
-	cp bin/$(BINARY_NAME) /usr/local/bin/$(BINARY)
 
 .PHONY: test ## Run unit tests then end-to-end tests
 test: test-unit e2e
@@ -100,17 +61,6 @@ test-unit: test-unit-build ## Run unit tests
 .PHONY: lint
 lint: ## Run the go linter
 	@$(DOCKER_BUILD) $(BUILD_ARGS) . --target lint
-
-.PHONY: validate-headers
-validate-headers: ## Validate files license header
-	@$(DOCKER_BUILD) $(BUILD_ARGS) . --target validate-headers
-
-.PHONY: validate-go-mod
-validate-go-mod: ## Validate go.mod and go.sum are up-to-date
-	@$(DOCKER_BUILD) $(BUILD_ARGS) . --target check-go-mod
-
-.PHONY: validate
-validate: validate-go-mod validate-headers ## Validate sources
 
 .PHONY: help
 help: ## Show help
