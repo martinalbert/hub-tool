@@ -1,0 +1,15 @@
+Version 1.0.0 (Modified by [Martin Albert])
+Date: 2023-09-27
+- Modified main function and package to be able to use it as a library
+  - Moved it to package client 
+  - Renamed main function to NewClient 
+  - Renamed old function NewClient to private function newClient
+  - Visible in commit 096888d
+- Cleaned up unnecessary files and code from the project not needed for the library
+  - This involves e2e tests, internal package, MAKEFILE, Dockerfile, etc.
+  - Visible in commit 06156b6 and 39cfea3
+- Updated 
+  - GO version to 1.20 as well as dependencies
+  - Visible in commit 1f35d31
+- Updated deprecated code after updating dependencies and fixed lint issues
+  - Vissible in commit 9a4744b
